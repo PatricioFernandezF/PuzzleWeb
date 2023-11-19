@@ -13,3 +13,8 @@
     background-repeat: no-repeat;
 }
 
+#timer {
+    /* Add your styles for the timer here */
+    font-size: 1.5rem; /* Example style */
+}
+

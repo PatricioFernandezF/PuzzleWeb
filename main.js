@@ -9,16 +9,45 @@ const DEFAULT_IMAGE_URL = 'image.jpg';
 // Game state variables
 let currentDifficulty = 'easy';
 let shuffledIndexes = [];
-
+let timerInterval;
 
 
 // Ensure valid image paths and setup for the grid
 
 document.addEventListener('DOMContentLoaded', () => {
     setupDifficultyButtons();
-    setupResetButton();
+    
+    setupReturnButton();
+    const resetButton = document.getElementById('reset-btn');
+    resetButton.addEventListener('click', resetGame); // Bind the resetGame function
 });
 
+function resetGame() {
+    // ... any other reset logic ...
+    startGame(); // Call startGame to reset the puzzle and the timer
+}
+
+
+// Setup the return button event listener
+function setupReturnButton() {
+    const returnButton = document.getElementById('return-main-btn');
+    returnButton.addEventListener('click', returnToMainScreen);
+}
+
+function resetAndStartTimer() {
+    stopTimer(); // Stop the current timer
+    // Reset the timer display to "00:00"
+    const timerDisplay = document.getElementById('time-counter');
+    timerDisplay.textContent = formatTime(0);
+    startTimer(); // Start a new timer
+}
+
+// Function to handle returning to the main screen
+function returnToMainScreen() {
+    // Hide the game container and show the intro screen
+    hideElement(GAME_CONTAINER_ID);
+    showElement(INTRO_SCREEN_ID);
+}
 
 // Setup event listeners for difficulty buttons
 function setupDifficultyButtons() {
@@ -43,6 +72,17 @@ function setDifficulty(difficulty) {
     startGame();
 }
 
+
+// Starts the timer
+function startTimer() {
+    const timerDisplay = document.getElementById('time-counter');
+    let secondsElapsed = 0;
+    timerInterval = setInterval(() => {
+        secondsElapsed++;
+        timerDisplay.textContent = formatTime(secondsElapsed);
+    }, 1000);
+}
+
 function hideElement(elementId) {
     const element = document.getElementById(elementId);
     element.style.display = 'none';
@@ -54,10 +94,30 @@ function showElement(elementId) {
 }
 
 function startGame() {
+    resetAndStartTimer(); // Reset and start the timer
     fetchRandomImage()
         .then(createPuzzle)
         .catch(handleImageFetchError);
+    // Removed the extra startTimer() call from here
 }
+
+// Stops the timer
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// Formats the time from seconds into a MM:SS string
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secondsLeft = seconds % 60;
+    return `${pad(minutes)}:${pad(secondsLeft)}`;
+}
+
+// Adds a leading zero to numbers less than 10
+function pad(number) {
+    return number < 10 ? `0${number}` : number;
+}
+
 
 // Handle image fetch error
 function handleImageFetchError(error) {
@@ -212,14 +272,22 @@ function checkIfPuzzleCompleted() {
     const puzzlePieces = document.querySelectorAll('.puzzle-piece');
     const isCompleted = Array.from(puzzlePieces).every(piece => {
         const [row, col] = piece.dataset.position.split(',');
-        return piece.style.gridRowStart === row && piece.style.gridColumnStart === col;
+        const correctRow = parseInt(row) + 1;
+        const correctCol = parseInt(col) + 1;
+        return piece.style.gridRowStart == correctRow && piece.style.gridColumnStart == correctCol;
     });
 
     if (isCompleted) {
-        // Handle puzzle completion (e.g., display a message)
-        console.log('Puzzle Completed!');
+        stopTimer();
+        alert('Congratulations! You have completed the puzzle.');
+        returnToMainScreen(); // This line will return to the main screen after the alert is accepted
+        // Optionally, disable interaction with the pieces after completion
+        puzzlePieces.forEach(piece => {
+            piece.setAttribute('draggable', false);
+        });
     }
 }
+
 
 
 function handleDragStart(event) {
