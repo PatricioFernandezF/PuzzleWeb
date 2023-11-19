@@ -1,16 +1,19 @@
 /* CSS Code for Adjusting Puzzle Pieces to Grid */
 
 #puzzle-area {
-  display: grid; /* this will be dynamically adjusted in the JS */
-  gap: 2px; /* optional: adds a small gap between pieces */
+       display: grid;
+    max-width: 80%; /* or a fixed max-width if preferred */
+    max-height: 80vh; /* limits the height to 80% of the viewport height */
+    margin: auto; /* center the grid in the middle of the screen */
+    aspect-ratio: 1; /* ensures the area is always square */
 }
-
 
 .puzzle-piece {
     background-image: url('image.jpg'); /* Replace with your image path */
     background-size: 600px 600px; /* Replace with the size of your original image */
     background-position: top left; /* This will be dynamically set per piece */
     background-repeat: no-repeat;
+    border: 1px solid #fff; /* Example border */
 }
 
 #timer {
@@ -18,3 +21,33 @@
     font-size: 1.5rem; /* Example style */
 }
 
+
+#game-container {
+    max-width: 90vw; /* Maximum width of 90% of the viewport width */
+    max-height: 80vh; /* Maximum height of 80% of the viewport height */
+    margin: auto; /* Center the container */
+    /* ... other styles ... */
+}
+
+
+@media (max-width: 600px) {
+    #game-container {
+        max-width: 100vw;
+        max-height: 70vh;
+    }
+
+    #puzzle-area {
+        /* Adjustments for smaller screens */
+    }
+}
+
+@media (min-width: 1024px) {
+    #puzzle-area {
+        /* Set a maximum size if necessary */
+        max-width: 1024px; /* Example: cap the width at 1024px */
+    }
+
+    .puzzle-piece {
+        /* Adjust piece sizes if necessary */
+    }
+}

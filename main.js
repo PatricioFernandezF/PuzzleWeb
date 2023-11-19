@@ -183,14 +183,6 @@ function createAndPlacePieces(puzzleArea, cols, rows, imageUrl, pieceSize) {
 }
 
 
-// Setup puzzle area styles
-function setupPuzzleArea(puzzleArea, cols, rows, imageUrl, pieceSize) {
-    puzzleArea.style.display = 'grid';
-    puzzleArea.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    puzzleArea.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    puzzleArea.style.backgroundImage = `url(${imageUrl})`;
-}
-
 // Fetch a random image for the puzzle
 function fetchRandomImage() {
     // Replace with actual image fetching logic
@@ -362,15 +354,38 @@ function checkCompletion() {
 }
 
 
-// Calculate piece size based on grid columns
 function calculatePieceSize(cols) {
     const puzzleArea = document.getElementById(PUZZLE_AREA_ID);
-    return puzzleArea.offsetWidth / cols;
+    const maxWidth = puzzleArea.clientWidth < window.innerWidth ? puzzleArea.clientWidth : window.innerWidth * 0.8;
+    const maxHeight = window.innerHeight * 0.8;
+    const maxPuzzleSize = Math.min(maxWidth, maxHeight);
+    return maxPuzzleSize / cols;
 }
 
+// When setting up the puzzle area:
+function setupPuzzleArea(puzzleArea, cols, rows) {
+    const pieceSize = calculatePieceSize(cols);
+    puzzleArea.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    puzzleArea.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+    // Now set the size of the puzzle pieces
+    const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+    puzzlePieces.forEach(piece => {
+        piece.style.width = `${pieceSize}px`;
+        piece.style.height = `${pieceSize}px`;
+        // Adjust background size and position if necessary
+    });
+}
 
 // Function to calculate the number of pieces per row based on difficulty
 function piecesPerRow(difficulty) {
     return difficulty === 'easy' ? 2 : difficulty === 'medium' ? 4 : 6;}
 
 
+window.addEventListener('resize', resizePuzzle);
+
+function resizePuzzle() {
+    const gridSize = getGridSize(currentDifficulty); // Assuming this returns [cols, rows]
+    setupPuzzleArea(document.getElementById(PUZZLE_AREA_ID), gridSize[0], gridSize[1]);
+    // Call any functions necessary to resize and reposition the pieces
+}
