@@ -1,0 +1,15 @@
+/* CSS Code for Adjusting Puzzle Pieces to Grid */
+
+#puzzle-area {
+  display: grid; /* this will be dynamically adjusted in the JS */
+  gap: 2px; /* optional: adds a small gap between pieces */
+}
+
+
+.puzzle-piece {
+    background-image: url('image.jpg'); /* Replace with your image path */
+    background-size: 600px 600px; /* Replace with the size of your original image */
+    background-position: top left; /* This will be dynamically set per piece */
+    background-repeat: no-repeat;
+}
+
