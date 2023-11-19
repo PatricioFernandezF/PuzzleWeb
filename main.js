@@ -177,6 +177,8 @@ function createAndPlacePieces(puzzleArea, cols, rows, imageUrl, pieceSize) {
             piece.style.position = 'relative';
             piece.style.border = '1px solid #fff';
             piece.setAttribute('data-position', `${row},${col}`);
+            piece.setAttribute('data-current-index', shuffledIndexes[row * cols + col]);
+            piece.setAttribute('data-correct-index', row * cols + col);
 
             // Add the piece to the shuffled position
             const shuffledIndex = shuffledIndexes[row * cols + col];
@@ -258,29 +260,49 @@ function initDragAndDrop() {
 
 // Swap pieces
 function swapPieces(piece1, piece2) {
-    const tempPosition = piece1.style.gridRowStart;
+    // Swapping grid positions
+    let tempGridRow = piece1.style.gridRowStart;
+    let tempGridColumn = piece1.style.gridColumnStart;
     piece1.style.gridRowStart = piece2.style.gridRowStart;
-    piece2.style.gridRowStart = tempPosition;
-
-    const tempColPosition = piece1.style.gridColumnStart;
     piece1.style.gridColumnStart = piece2.style.gridColumnStart;
-    piece2.style.gridColumnStart = tempColPosition;
+    piece2.style.gridRowStart = tempGridRow;
+    piece2.style.gridColumnStart = tempGridColumn;
+    
+    // Swapping data-current-index attributes
+    let tempIndex = piece1.getAttribute('data-current-index');
+    piece1.setAttribute('data-current-index', piece2.getAttribute('data-current-index'));
+    piece2.setAttribute('data-current-index', tempIndex);
+
+    // Check if the puzzle is completed after each swap
+    checkIfPuzzleCompleted();
 }
+
 
 // Check if the puzzle is completed
 function checkIfPuzzleCompleted() {
-    const puzzlePieces = document.querySelectorAll('.puzzle-piece');
-    const isCompleted = Array.from(puzzlePieces).every(piece => {
-        // assuming piece.dataset.correctIndex holds the index of where this piece should be
-        return piece.dataset.currentIndex === piece.dataset.correctIndex;
+    const pieces = document.querySelectorAll('.puzzle-piece');
+    let isCompleted = true;
+
+    pieces.forEach(piece => {
+        const current = parseInt(piece.getAttribute('data-current-index'), 10);
+        const correct = parseInt(piece.getAttribute('data-correct-index'), 10);
+
+        if (current !== correct) {
+            isCompleted = false;
+        }
     });
 
     if (isCompleted) {
-        const timeAchieved = document.getElementById('time-counter').textContent;
-        alert(`Congratulations! You have completed the puzzle in ${timeAchieved}.`);
-        returnToMainScreen(timeAchieved);
+        // Stop the timer and get the achieved time
+        stopTimer();
+        const achievedTime = document.getElementById('time-counter').textContent;
+
+        // Call returnToMainScreen with the achieved time
+        returnToMainScreen(achievedTime);
     }
 }
+
+
 
 
 function handleDragStart(event) {
