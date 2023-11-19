@@ -43,10 +43,18 @@ function resetAndStartTimer() {
 }
 
 // Function to handle returning to the main screen
-function returnToMainScreen() {
-    // Hide the game container and show the intro screen
-    hideElement(GAME_CONTAINER_ID);
-    showElement(INTRO_SCREEN_ID);
+// Adjust the returnToMainScreen to show the achieved time on the main screen
+function returnToMainScreen(timeAchieved) {
+    // Code to return to the main screen
+    // Update the display for the achieved time, assuming an element with id 'score' exists to show it
+    const scoreDisplay = document.getElementById('score');
+    if(scoreDisplay) {
+        scoreDisplay.textContent = `Achieved Time: ${timeAchieved}`;
+    }
+
+    // Then hide the puzzle and show the intro screen
+    hideElement('game-container');
+    showElement('intro-screen');
 }
 
 // Setup event listeners for difficulty buttons
@@ -242,7 +250,7 @@ function initDragAndDrop() {
 
             if (targetPosition !== draggedPosition) {
                 swapPieces(e.target, draggedPiece);
-                checkIfPuzzleCompleted();
+                //checkIfPuzzleCompleted();
             }
         });
     });
@@ -263,23 +271,16 @@ function swapPieces(piece1, piece2) {
 function checkIfPuzzleCompleted() {
     const puzzlePieces = document.querySelectorAll('.puzzle-piece');
     const isCompleted = Array.from(puzzlePieces).every(piece => {
-        const [row, col] = piece.dataset.position.split(',');
-        const correctRow = parseInt(row) + 1;
-        const correctCol = parseInt(col) + 1;
-        return piece.style.gridRowStart == correctRow && piece.style.gridColumnStart == correctCol;
+        // assuming piece.dataset.correctIndex holds the index of where this piece should be
+        return piece.dataset.currentIndex === piece.dataset.correctIndex;
     });
 
     if (isCompleted) {
-        stopTimer();
-        alert('Congratulations! You have completed the puzzle.');
-        returnToMainScreen(); // This line will return to the main screen after the alert is accepted
-        // Optionally, disable interaction with the pieces after completion
-        puzzlePieces.forEach(piece => {
-            piece.setAttribute('draggable', false);
-        });
+        const timeAchieved = document.getElementById('time-counter').textContent;
+        alert(`Congratulations! You have completed the puzzle in ${timeAchieved}.`);
+        returnToMainScreen(timeAchieved);
     }
 }
-
 
 
 function handleDragStart(event) {
