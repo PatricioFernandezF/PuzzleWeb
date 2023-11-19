@@ -1,107 +1,141 @@
+// Constants for game settings
+const GAME_CONTAINER_ID = 'game-container';
+const INTRO_SCREEN_ID = 'intro-screen';
+const RESET_BUTTON_ID = 'reset-btn';
+const DIFFICULTY_BUTTON_CLASS = 'difficulty-btn';
+const PUZZLE_AREA_ID = 'puzzle-area';
+const DEFAULT_IMAGE_URL = 'image.jpg';
+
+// Game state variables
+let currentDifficulty = 'easy';
+let shuffledIndexes = [];
+
+
 
 // Ensure valid image paths and setup for the grid
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Event listeners for the difficulty buttons
-    document.querySelectorAll('.difficulty-btn').forEach(button => {
+    setupDifficultyButtons();
+    setupResetButton();
+});
+
+
+// Setup event listeners for difficulty buttons
+function setupDifficultyButtons() {
+    const difficultyButtons = document.querySelectorAll(`.${DIFFICULTY_BUTTON_CLASS}`);
+    difficultyButtons.forEach(button => {
         button.addEventListener('click', () => {
             setDifficulty(button.dataset.difficulty);
         });
     });
+}
 
-    // Event listener for the reset button
-    document.getElementById('reset-btn').addEventListener('click', startGame);
-});
-
-let currentDifficulty = 'easy';
+// Setup event listener for reset button
+function setupResetButton() {
+    const resetButton = document.getElementById(RESET_BUTTON_ID);
+    resetButton.addEventListener('click', startGame);
+}
 
 function setDifficulty(difficulty) {
     currentDifficulty = difficulty;
-    document.getElementById('intro-screen').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block';
+    hideElement(INTRO_SCREEN_ID);
+    showElement(GAME_CONTAINER_ID);
     startGame();
 }
 
+function hideElement(elementId) {
+    const element = document.getElementById(elementId);
+    element.style.display = 'none';
+}
+
+function showElement(elementId) {
+    const element = document.getElementById(elementId);
+    element.style.display = 'block';
+}
+
 function startGame() {
-    // Attempt to fetch an image and create puzzle pieces
-    fetchRandomImage().then(imageUrl => {
-        createPuzzlePieces(imageUrl, currentDifficulty);
-        initDragAndDrop();
-    }).catch(error => {
-        console.error('Error fetching image:', error);
-        // If image fetch fails, display an error message or a default image
-        createPuzzlePieces('image.jpg', currentDifficulty);
-        initDragAndDrop();
-    });
+    fetchRandomImage()
+        .then(createPuzzle)
+        .catch(handleImageFetchError);
 }
 
-function getGridSize(difficulty) {
-  switch(difficulty) {
-    case 'easy': return [3, 3]; // 3x3 grid
-    case 'medium': return [4, 4]; // 4x4 grid
-    case 'hard': return [6, 6]; // 6x6 grid
-    default: return [3, 3]; // default to easy
-  }
+// Handle image fetch error
+function handleImageFetchError(error) {
+    console.error('Error fetching image:', error);
+    createPuzzle(DEFAULT_IMAGE_URL);
 }
 
-// Modify this function based on your existing logic to set the difficulty
-function createPuzzlePieces(imageUrl,difficulty) {
-  const [cols, rows] = getGridSize(difficulty);
-  const puzzleArea = document.getElementById('puzzle-area');
-  const pieceSize = puzzleArea.offsetWidth / cols;
-
-   const positions = [];
-    for(let i = 0; i < rows * cols; i++) {
-        positions.push(i);
-    }
-    // Shuffle the array to randomize the positions
-    shuffleArray(positions);
-
-  // Adjust the grid template settings based on difficulty
-  puzzleArea.style.display = 'grid';
-  puzzleArea.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  puzzleArea.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-
-    // Set the background for the whole puzzle area
-  puzzleArea.style.backgroundImage = `url(${imageUrl})`;
-
-
-    // Create and place puzzle pieces
-    for(let i = 0; i < positions.length; i++) {
-        const row = Math.floor(positions[i] / cols);
-        const col = positions[i] % cols;
-        const piece = document.createElement('div');
-        piece.setAttribute('data-correct-order', i); 
-        piece.id = `piece-${row}-${col}`;
-        piece.classList.add('puzzle-piece');
-        piece.style.width = `${pieceSize}px`;
-        piece.style.height = `${pieceSize}px`;
-
-        // Calculate the background position
-        const posX = col * pieceSize;
-        const posY = row * pieceSize;
-        piece.style.backgroundImage = `url(${imageUrl})`;
-        piece.style.backgroundSize = `${cols * pieceSize}px ${rows * pieceSize}px`;
-        piece.style.backgroundPosition = `-${posX}px -${posY}px`;
-        piece.style.backgroundRepeat = 'no-repeat';
-
-        // Use the shuffled positions for the grid placement
-        const shuffledRow = Math.floor(i / cols) + 1;
-        const shuffledCol = (i % cols) + 1;
-        piece.style.gridRowStart = shuffledRow;
-        piece.style.gridColumnStart = shuffledCol;
-
-        // Append the puzzle piece to the puzzle area
-        puzzleArea.appendChild(piece);
-    }
+function createPuzzle(imageUrl) {
+    const gridSize = getGridSize(currentDifficulty);
+    createPuzzlePieces(imageUrl, gridSize);
     initDragAndDrop();
 }
 
-function fetchRandomImage() {
-    // This function should fetch a random image from a server or local directory
-    return Promise.resolve('image.jpg'); // Make sure this is a valid path
+
+// Determine grid size based on difficulty
+function getGridSize(difficulty) {
+    switch (difficulty) {
+        case 'easy': return [3, 3];
+        case 'medium': return [4, 4];
+        case 'hard': return [6, 6];
+        default: return [3, 3];
+    }
 }
 
+// Create and display puzzle pieces
+function createPuzzlePieces(imageUrl, gridSize) {
+    const [cols, rows] = gridSize;
+    const puzzleArea = document.getElementById(PUZZLE_AREA_ID);
+    const pieceSize = calculatePieceSize(cols);
+
+    shuffledIndexes = [...Array(cols * rows).keys()];
+    shuffleArray(shuffledIndexes);
+
+    setupPuzzleArea(puzzleArea, cols, rows, imageUrl, pieceSize);
+    createAndPlacePieces(puzzleArea, cols, rows, imageUrl, pieceSize);
+}
+
+// Create and place puzzle pieces in the puzzle area
+function createAndPlacePieces(puzzleArea, cols, rows, imageUrl, pieceSize) {
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const piece = document.createElement('div');
+            piece.className = 'puzzle-piece';
+            piece.style.width = `${pieceSize}px`;
+            piece.style.height = `${pieceSize}px`;
+            piece.style.backgroundImage = `url(${imageUrl})`;
+            piece.style.backgroundSize = `${cols * pieceSize}px ${rows * pieceSize}px`;
+            piece.style.backgroundPosition = `-${col * pieceSize}px -${row * pieceSize}px`;
+            piece.style.position = 'relative';
+            piece.style.border = '1px solid #fff';
+            piece.setAttribute('data-position', `${row},${col}`);
+
+            // Add the piece to the shuffled position
+            const shuffledIndex = shuffledIndexes[row * cols + col];
+            const shuffledRow = Math.floor(shuffledIndex / cols);
+            const shuffledCol = shuffledIndex % cols;
+            piece.style.gridRowStart = shuffledRow + 1;
+            piece.style.gridColumnStart = shuffledCol + 1;
+
+            puzzleArea.appendChild(piece);
+        }
+    }
+}
+
+
+// Setup puzzle area styles
+function setupPuzzleArea(puzzleArea, cols, rows, imageUrl, pieceSize) {
+    puzzleArea.style.display = 'grid';
+    puzzleArea.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    puzzleArea.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    puzzleArea.style.backgroundImage = `url(${imageUrl})`;
+}
+
+// Fetch a random image for the puzzle
+function fetchRandomImage() {
+    // Replace with actual image fetching logic
+    return Promise.resolve(DEFAULT_IMAGE_URL);
+}
 
 
 function displayImage(imageUrl) {
@@ -120,6 +154,7 @@ function getPieceCount(difficulty) {
     }
 }
 
+// Utility function to shuffle an array
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -127,20 +162,65 @@ function shuffleArray(array) {
     }
 }
 
+
+// Initialize drag and drop functionality
 function initDragAndDrop() {
     const puzzlePieces = document.querySelectorAll('.puzzle-piece');
-    const puzzleArea = document.getElementById('puzzle-area');
+    let draggedPiece = null;
 
-    // Enable dragging on each puzzle piece
     puzzlePieces.forEach(piece => {
         piece.setAttribute('draggable', true);
-        piece.addEventListener('dragstart', handleDragStart);
+
+        // Drag start event
+        piece.addEventListener('dragstart', (e) => {
+            draggedPiece = piece;
+            e.dataTransfer.setData('text/plain', piece.dataset.position);
+        });
+
+        // Drag over event
+        piece.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Necessary to allow dropping
+        });
+
+        // Drop event
+        piece.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetPosition = e.target.dataset.position;
+            const draggedPosition = draggedPiece.dataset.position;
+
+            if (targetPosition !== draggedPosition) {
+                swapPieces(e.target, draggedPiece);
+                checkIfPuzzleCompleted();
+            }
+        });
+    });
+}
+
+// Swap pieces
+function swapPieces(piece1, piece2) {
+    const tempPosition = piece1.style.gridRowStart;
+    piece1.style.gridRowStart = piece2.style.gridRowStart;
+    piece2.style.gridRowStart = tempPosition;
+
+    const tempColPosition = piece1.style.gridColumnStart;
+    piece1.style.gridColumnStart = piece2.style.gridColumnStart;
+    piece2.style.gridColumnStart = tempColPosition;
+}
+
+// Check if the puzzle is completed
+function checkIfPuzzleCompleted() {
+    const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+    const isCompleted = Array.from(puzzlePieces).every(piece => {
+        const [row, col] = piece.dataset.position.split(',');
+        return piece.style.gridRowStart === row && piece.style.gridColumnStart === col;
     });
 
-    // Allow the puzzle area to respond to dragover and drop events
-    puzzleArea.addEventListener('dragover', handleDragOver);
-    puzzleArea.addEventListener('drop', handleDrop);
+    if (isCompleted) {
+        // Handle puzzle completion (e.g., display a message)
+        console.log('Puzzle Completed!');
+    }
 }
+
 
 function handleDragStart(event) {
     // Set the data transfer object with the id of the piece being dragged
@@ -198,23 +278,7 @@ function swapPuzzlePieces(piece1, piece2) {
 
 
 
-function swapPieces(piece1, piece2) {
-    // Swap positions
-    let top1 = piece1.style.top;
-    let left1 = piece1.style.left;
-    let top2 = piece2.style.top;
-    let left2 = piece2.style.left;
 
-    piece1.style.top = top2;
-    piece1.style.left = left2;
-    piece2.style.top = top1;
-    piece2.style.left = left1;
-
-    // Swap indexes in shuffledIndexes array
-    let index1 = shuffledIndexes.indexOf(parseInt(piece1.id.split('-')[1]));
-    let index2 = shuffledIndexes.indexOf(parseInt(piece2.id.split('-')[1]));
-    [shuffledIndexes[index1], shuffledIndexes[index2]] = [shuffledIndexes[index2], shuffledIndexes[index1]];
-}
 
 function checkCompletion() {
     const pieces = document.querySelectorAll('.puzzle-piece');
@@ -230,10 +294,10 @@ function checkCompletion() {
 }
 
 
-function calculatePieceSize(difficulty, containerSize) {
-    const piecesPerRow = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 4 : 6;
-    const pieceSize = containerSize / piecesPerRow;
-    return pieceSize;
+// Calculate piece size based on grid columns
+function calculatePieceSize(cols) {
+    const puzzleArea = document.getElementById(PUZZLE_AREA_ID);
+    return puzzleArea.offsetWidth / cols;
 }
 
 
